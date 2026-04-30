@@ -1,18 +1,21 @@
 import json
 import os
 import re
+import threading
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
+from queue import Empty, Queue
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from client import DEFAULT_MODEL, get_openai_client, get_http_client
 from indexer import DEFAULT_MODEL as DEFAULT_EMBEDDING_MODEL
 from indexer import build_notes_index
+from radar import run_scan as run_radar_scan
 from tools import AVAILABLE_TOOLS, TOOL_FUNCTIONS
 
 app = FastAPI(title="AI Builders Chat API")
@@ -189,6 +192,71 @@ class ModelsResponse(BaseModel):
 class NotesStatusResponse(BaseModel):
     active: dict | None
     indexes: list[dict]
+
+
+@app.post("/run-scan")
+@app.post("/run_scan")
+def run_scan_endpoint():
+    """
+    Run the two-stage Strategic Information Radar workflow.
+    """
+    try:
+        print("[Radar] POST /run-scan received")
+        return run_radar_scan()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Scan error: {str(e)}")
+
+
+def format_sse(event: str, data: dict) -> str:
+    payload = json.dumps(data, ensure_ascii=False)
+    return f"event: {event}\ndata: {payload}\n\n"
+
+
+@app.get("/run-scan/stream")
+def run_scan_stream():
+    """
+    Stream Strategic Information Radar progress events with Server-Sent Events.
+    """
+    events: Queue[tuple[str, dict] | None] = Queue()
+
+    def emit(event: dict):
+        events.put(("trace", event))
+
+    def worker():
+        try:
+            print("[Radar] SSE /run-scan/stream started")
+            result = run_radar_scan(emit=emit)
+            events.put(("result", result))
+        except Exception as e:
+            events.put(("scan_error", {"detail": f"Scan error: {str(e)}"}))
+        finally:
+            events.put(None)
+
+    threading.Thread(target=worker, daemon=True).start()
+
+    def event_generator():
+        while True:
+            try:
+                item = events.get(timeout=15)
+            except Empty:
+                yield format_sse("ping", {"timestamp": datetime.now(timezone.utc).isoformat()})
+                continue
+
+            if item is None:
+                yield format_sse("done", {"status": "complete"})
+                break
+
+            event_name, data = item
+            yield format_sse(event_name, data)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @app.get("/models", response_model=ModelsResponse)

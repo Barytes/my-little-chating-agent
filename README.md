@@ -8,17 +8,20 @@
 - **Web Search**: 使用 Tavily 搜索引擎搜索网络信息
 - **Read Page**: 获取网页内容并提取纯文本
 - **Chat Web UI**: 现代化的聊天界面，支持历史记录和实时响应
-- **My Notes Search**: 在前端选择本地 Markdown 笔记目录，自动生成/复用本地 FAISS index，并让 Agent 查询个人知识库
+- **Agentic RAG**: 在前端选择本地 Markdown 笔记目录，自动生成/复用本地 FAISS index，并让 Agent 查询个人知识库
+- **Strategic Information Radar**: 一键运行两阶段外部新闻扫描，并按战略背景评估重要性
 
 ## 项目结构
 
 ```
 client.py        - AI Builders Space API 配置和客户端
-tools.py         - 工具函数定义（web_search, read_page）和 Function Schema
+tools.py         - 工具函数定义（web_search, read_page, run_scan）和 Function Schema
+radar.py         - Strategic Information Radar 两阶段扫描流程
+background.md    - 战略背景配置
 indexer.py       - Markdown 笔记索引脚本（embeddings + FAISS）
 main.py          - FastAPI 后端服务
 static/index.html - 聊天前端界面
-.env             - 环境变量配置（BUILDER_API_KEY）
+.env             - 环境变量配置（SUPER_MIND_API_KEY / BUILDER_API_KEY）
 index/           - 本地笔记索引目录（自动生成，已 gitignore）
 ```
 
@@ -29,6 +32,8 @@ index/           - 本地笔记索引目录（自动生成，已 gitignore）
 | `/` | GET | 聊天前端界面 |
 | `/models` | GET | 获取可用模型列表 |
 | `/chat` | POST | Agent 聊天（自动处理工具调用） |
+| `/run-scan` | POST | 运行 Strategic Information Radar 两阶段扫描 |
+| `/run-scan/stream` | GET | 通过 SSE 实时流式返回扫描 trace 和最终结果 |
 | `/search` | POST | 网络搜索 |
 | `/notes/status` | GET | 查看当前加载的笔记索引 |
 | `/notes/select` | POST | 切换到已有笔记索引 |
@@ -47,8 +52,12 @@ uv pip install fastapi uvicorn openai python-dotenv httpx beautifulsoup4 lxml
 创建 `.env` 文件：
 
 ```
-BUILDER_API_KEY=your_api_key_here
+SUPER_MIND_API_KEY=your_api_key_here
+RADAR_MODEL=grok-4-fast
 ```
+
+`BUILDER_API_KEY` 和 `AI_BUILDER_TOKEN` 仍作为兼容 fallback 支持。
+`RADAR_MODEL` 控制 Strategic Radar 使用的模型；如果写成 `grok4fast`，后端会自动映射为 `grok-4-fast`。
 
 ### 3. 启动服务
 
@@ -59,6 +68,8 @@ source .venv/bin/activate && uvicorn main:app --reload
 ### 4. 访问应用
 
 打开浏览器访问: http://localhost:8000
+
+页面里的 `Strategic Radar` 面板支持 `Start Scan` 一键扫描。扫描时会通过 SSE 显示 Live Trace，包括阶段切换、模型调用摘要、工具调用参数和工具结果摘要。
 
 ### 5. 加载个人笔记
 

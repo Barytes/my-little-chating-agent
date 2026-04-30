@@ -88,6 +88,22 @@ QUERY_MY_NOTES_SCHEMA = {
     },
 }
 
+RUN_SCAN_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "run_scan",
+        "description": (
+            "Run the Strategic Information Radar workflow. It reads background.md, "
+            "performs a broad news scan, reads candidate article URLs, and returns "
+            "a structured strategic importance analysis."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {},
+        },
+    },
+}
+
 
 def web_search(keywords: list[str], max_results: int = 5) -> dict:
     """
@@ -268,11 +284,24 @@ def query_my_notes(query: str, top_k: int = 5) -> dict:
     }
 
 
+def run_scan() -> dict:
+    """Run the Strategic Information Radar workflow as an agent tool."""
+    from radar import run_scan as execute_radar_scan
+
+    return execute_radar_scan()
+
+
 # Export all available tools and their schemas
-AVAILABLE_TOOLS = [WEB_SEARCH_SCHEMA, READ_PAGE_SCHEMA, QUERY_MY_NOTES_SCHEMA]
+AVAILABLE_TOOLS = [
+    WEB_SEARCH_SCHEMA,
+    READ_PAGE_SCHEMA,
+    QUERY_MY_NOTES_SCHEMA,
+    RUN_SCAN_SCHEMA,
+]
 
 TOOL_FUNCTIONS = {
     "web_search": web_search,
     "read_page": read_page,
     "query_my_notes": query_my_notes,
+    "run_scan": run_scan,
 }

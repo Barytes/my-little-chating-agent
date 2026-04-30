@@ -154,6 +154,246 @@
             cursor: not-allowed;
         }
 
+        .radar-panel {
+            border-bottom: 1px solid #0f3460;
+            background: #121b31;
+            padding: 16px 20px;
+        }
+
+        .radar-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .radar-title {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .radar-title h2 {
+            color: #f4f7fb;
+            font-size: 1rem;
+            font-weight: 650;
+        }
+
+        .radar-status {
+            color: #b9c0d4;
+            font-size: 0.85rem;
+            margin-top: 4px;
+            min-height: 1.2em;
+        }
+
+        .scan-btn {
+            padding: 10px 16px;
+            background: #2aa876;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 650;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .scan-btn:hover {
+            background: #36c58d;
+        }
+
+        .scan-btn:disabled {
+            background: #516174;
+            cursor: not-allowed;
+        }
+
+        .radar-report {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 14px;
+            max-height: 360px;
+            overflow: auto;
+        }
+
+        .trace-panel {
+            margin-top: 14px;
+            background: #0f172a;
+            border: 1px solid #263a62;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .trace-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #263a62;
+        }
+
+        .trace-header h3 {
+            color: #f4f7fb;
+            font-size: 0.9rem;
+        }
+
+        .trace-detail-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #b9c0d4;
+            font-size: 0.8rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .trace-list {
+            max-height: 260px;
+            overflow: auto;
+            padding: 6px 0;
+        }
+
+        .trace-entry {
+            padding: 8px 12px;
+            border-top: 1px solid rgba(38, 58, 98, 0.65);
+            font-size: 0.84rem;
+            line-height: 1.45;
+        }
+
+        .trace-entry:first-child {
+            border-top: 0;
+        }
+
+        .trace-line {
+            display: flex;
+            gap: 8px;
+            align-items: baseline;
+        }
+
+        .trace-time {
+            color: #8090aa;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .trace-type {
+            color: #8bd3ff;
+            white-space: nowrap;
+            font-weight: 650;
+        }
+
+        .trace-label {
+            color: #f4f7fb;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .trace-detail {
+            display: none;
+            margin-top: 6px;
+            color: #b9c0d4;
+            background: #101827;
+            border: 1px solid #263a62;
+            border-radius: 6px;
+            padding: 8px;
+            max-height: 180px;
+            overflow: auto;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-size: 0.78rem;
+        }
+
+        .trace-list.show-details .trace-detail {
+            display: block;
+        }
+
+        .radar-section {
+            background: #1a1a2e;
+            border: 1px solid #263a62;
+            border-radius: 8px;
+            padding: 14px;
+            min-width: 0;
+        }
+
+        .radar-section h3 {
+            color: #f4f7fb;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+
+        .radar-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .radar-item {
+            border-top: 1px solid #263a62;
+            padding-top: 10px;
+            line-height: 1.45;
+        }
+
+        .radar-item:first-child {
+            border-top: 0;
+            padding-top: 0;
+        }
+
+        .radar-item-title {
+            color: #f4f7fb;
+            font-weight: 650;
+            word-break: break-word;
+        }
+
+        .radar-meta,
+        .radar-text {
+            color: #b9c0d4;
+            font-size: 0.85rem;
+            margin-top: 4px;
+            word-break: break-word;
+        }
+
+        .radar-link {
+            color: #8bd3ff;
+            text-decoration: none;
+        }
+
+        .radar-link:hover {
+            text-decoration: underline;
+        }
+
+        .importance {
+            display: inline-flex;
+            align-items: center;
+            min-width: 64px;
+            justify-content: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        .importance.high {
+            background: #e94560;
+            color: #fff;
+        }
+
+        .importance.medium {
+            background: #f0b84f;
+            color: #111827;
+        }
+
+        .importance.low {
+            background: #58718c;
+            color: #fff;
+        }
+
+        @media (max-width: 900px) {
+            .radar-report {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* Messages Area */
         .messages-area {
             flex: 1;
@@ -321,6 +561,27 @@
             </div>
         </div>
 
+        <div class="radar-panel">
+            <div class="radar-toolbar">
+                <div class="radar-title">
+                    <h2>Strategic Radar</h2>
+                    <div class="radar-status" id="radarStatus"></div>
+                </div>
+                <button class="scan-btn" id="scanBtn" type="button">Start Scan</button>
+            </div>
+            <div class="trace-panel" id="tracePanel" hidden>
+                <div class="trace-header">
+                    <h3>Live Trace</h3>
+                    <label class="trace-detail-toggle">
+                        <input type="checkbox" id="traceDetailsToggle">
+                        Show details
+                    </label>
+                </div>
+                <div class="trace-list" id="traceList"></div>
+            </div>
+            <div class="radar-report" id="radarReport" hidden></div>
+        </div>
+
         <div class="messages-area" id="messagesArea">
             <div class="empty-state">
                 <h3>Start a conversation</h3>
@@ -335,9 +596,19 @@
     </div>
 
     <script>
-        const BASE_URL = 'http://localhost:8000';
+        const BASE_URL = window.location.origin;
         let chats = [];
         let currentChatId = null;
+        let scanEvents = null;
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
         // Load chats from localStorage
         function loadChats() {
@@ -464,7 +735,7 @@
         // Format content (basic markdown-like formatting)
         function formatContent(content) {
             // Escape HTML
-            content = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            content = escapeHtml(content);
             // Bold
             content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             // Code blocks
@@ -472,6 +743,199 @@
             // Line breaks
             content = content.replace(/\n/g, '<br>');
             return content;
+        }
+
+        function setRadarStatus(message) {
+            document.getElementById('radarStatus').textContent = message;
+        }
+
+        function renderBroadScan(report) {
+            const areas = report?.areas || [];
+            const articles = report?.articles || [];
+            const areaItems = areas.map(area => `
+                <div class="radar-item">
+                    <div class="radar-item-title">${escapeHtml(area.name)}</div>
+                    <div class="radar-text">${escapeHtml(area.rationale)}</div>
+                    <div class="radar-meta">${escapeHtml((area.search_queries || []).join(' | '))}</div>
+                </div>
+            `).join('');
+
+            const articleItems = articles.map(article => `
+                <div class="radar-item">
+                    <div class="radar-item-title">
+                        <a class="radar-link" href="${escapeHtml(article.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title || article.url)}</a>
+                    </div>
+                    <div class="radar-meta">${escapeHtml(article.source_query || article.source || '')}</div>
+                    <div class="radar-text">${escapeHtml(article.snippet || article.why_relevant || '')}</div>
+                </div>
+            `).join('');
+
+            return `
+                <div class="radar-section">
+                    <h3>Broad Scan</h3>
+                    <div class="radar-list">
+                        ${areaItems || '<div class="radar-meta">No areas returned.</div>'}
+                    </div>
+                    <h3 style="margin-top: 16px;">Articles</h3>
+                    <div class="radar-list">
+                        ${articleItems || '<div class="radar-meta">No articles returned.</div>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDeepDive(items) {
+            const deepItems = (items || []).map(item => {
+                const importance = String(item.importance || 'Low').toLowerCase();
+                return `
+                    <div class="radar-item">
+                        <div class="radar-item-title">
+                            <span class="importance ${escapeHtml(importance)}">${escapeHtml(item.importance || 'Low')}</span>
+                            <a class="radar-link" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title || item.url)}</a>
+                        </div>
+                        <div class="radar-text">${escapeHtml(item.summary)}</div>
+                        <div class="radar-meta">${escapeHtml(item.reasoning)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="radar-section">
+                    <h3>Deep Dive</h3>
+                    <div class="radar-list">
+                        ${deepItems || '<div class="radar-meta">No deep dive results returned.</div>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRadarReport(data) {
+            const report = document.getElementById('radarReport');
+            report.hidden = false;
+            report.innerHTML = renderBroadScan(data.broad_scan_report) + renderDeepDive(data.deep_dive_report);
+        }
+
+        function formatTraceTime(timestamp) {
+            if (!timestamp) return '--:--:--';
+            const date = new Date(timestamp);
+            if (Number.isNaN(date.getTime())) return '--:--:--';
+            return date.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function summarizeTraceEvent(event) {
+            if (event.label) return event.label;
+            if (event.type === 'tool_call') return `Calling ${event.tool || 'tool'}`;
+            if (event.type === 'tool_result') return `${event.tool || 'Tool'} returned`;
+            if (event.type === 'llm_call') return `Calling ${event.model || 'model'}`;
+            if (event.type === 'llm_result') return 'Model returned';
+            return event.type || 'Trace event';
+        }
+
+        function eventDetails(event) {
+            const detail = { ...event };
+            delete detail.timestamp;
+            delete detail.type;
+            delete detail.label;
+            return JSON.stringify(detail, null, 2);
+        }
+
+        function appendTrace(event) {
+            const panel = document.getElementById('tracePanel');
+            const list = document.getElementById('traceList');
+            panel.hidden = false;
+
+            const entry = document.createElement('div');
+            entry.className = 'trace-entry';
+            entry.innerHTML = `
+                <div class="trace-line">
+                    <span class="trace-time">${escapeHtml(formatTraceTime(event.timestamp))}</span>
+                    <span class="trace-type">${escapeHtml(event.type || 'event')}</span>
+                    <span class="trace-label">${escapeHtml(summarizeTraceEvent(event))}</span>
+                </div>
+                <pre class="trace-detail">${escapeHtml(eventDetails(event))}</pre>
+            `;
+            list.appendChild(entry);
+            list.scrollTop = list.scrollHeight;
+        }
+
+        function resetTrace() {
+            const panel = document.getElementById('tracePanel');
+            const list = document.getElementById('traceList');
+            panel.hidden = false;
+            list.innerHTML = '';
+        }
+
+        function closeScanStream() {
+            if (scanEvents) {
+                scanEvents.close();
+                scanEvents = null;
+            }
+        }
+
+        async function startScan() {
+            const scanBtn = document.getElementById('scanBtn');
+            const report = document.getElementById('radarReport');
+
+            console.log('[Radar] Start Scan clicked');
+            closeScanStream();
+            scanBtn.disabled = true;
+            report.hidden = true;
+            report.innerHTML = '';
+            resetTrace();
+            setRadarStatus('Scanning external signals...');
+
+            scanEvents = new EventSource('/run-scan/stream');
+
+            scanEvents.addEventListener('trace', event => {
+                appendTrace(JSON.parse(event.data));
+            });
+
+            scanEvents.addEventListener('result', event => {
+                const data = JSON.parse(event.data);
+                renderRadarReport(data);
+                const deepDiveCount = (data.deep_dive_report || []).length;
+                setRadarStatus(`Scan complete: ${deepDiveCount} article${deepDiveCount === 1 ? '' : 's'} analyzed`);
+            });
+
+            scanEvents.addEventListener('scan_error', event => {
+                let message = 'Scan failed';
+                if (event.data) {
+                    try {
+                        message = JSON.parse(event.data).detail || message;
+                    } catch (_) {
+                        message = event.data;
+                    }
+                }
+                appendTrace({
+                    type: 'error',
+                    timestamp: new Date().toISOString(),
+                    label: message
+                });
+                setRadarStatus(`Error: ${message}`);
+                closeScanStream();
+                scanBtn.disabled = false;
+            });
+
+            scanEvents.onerror = () => {
+                if (!scanEvents) return;
+                appendTrace({
+                    type: 'connection_error',
+                    timestamp: new Date().toISOString(),
+                    label: 'Scan stream connection failed'
+                });
+                setRadarStatus('Error: scan stream connection failed');
+                closeScanStream();
+                scanBtn.disabled = false;
+            };
+
+            scanEvents.addEventListener('done', () => {
+                closeScanStream();
+                scanBtn.disabled = false;
+            });
         }
 
         function setNotesStatus(message) {
@@ -635,6 +1099,10 @@
         });
 
         document.getElementById('notesDirectoryInput').addEventListener('change', handleNotesDirectorySelected);
+        document.getElementById('scanBtn').addEventListener('click', startScan);
+        document.getElementById('traceDetailsToggle').addEventListener('change', event => {
+            document.getElementById('traceList').classList.toggle('show-details', event.target.checked);
+        });
 
         // Load models from API
         async function loadModels() {
