@@ -13,6 +13,11 @@ from bs4 import BeautifulSoup
 from client import get_http_client, get_openai_client
 
 
+PROJECT_ROOT = Path(__file__).resolve().parent
+NOTES_ACTIVE_CONFIG_PATH = PROJECT_ROOT / os.getenv(
+    "MY_NOTES_ACTIVE_CONFIG_PATH",
+    "index/active_notes.json",
+)
 NOTES_INDEX_PATH = Path(os.getenv("MY_NOTES_INDEX_PATH", "my_notes.index"))
 NOTES_METADATA_PATH = Path(os.getenv("MY_NOTES_METADATA_PATH", "my_notes_metadata.json"))
 NOTES_EMBEDDING_MODEL = os.getenv("MY_NOTES_EMBEDDING_MODEL", "text-embedding-3-small")
@@ -176,7 +181,20 @@ def _resolve_notes_path(path: Path) -> Path:
     """Resolve note index paths relative to this project if needed."""
     if path.is_absolute():
         return path
-    return Path(__file__).resolve().parent / path
+    return PROJECT_ROOT / path
+
+
+def _get_active_notes_config() -> dict:
+    """Return the currently selected notes index config."""
+    if NOTES_ACTIVE_CONFIG_PATH.exists():
+        return json.loads(NOTES_ACTIVE_CONFIG_PATH.read_text(encoding="utf-8"))
+
+    return {
+        "notes_name": "default",
+        "index_path": str(_resolve_notes_path(NOTES_INDEX_PATH)),
+        "metadata_path": str(_resolve_notes_path(NOTES_METADATA_PATH)),
+        "embedding_model": NOTES_EMBEDDING_MODEL,
+    }
 
 
 def query_my_notes(query: str, top_k: int = 5) -> dict:
@@ -195,8 +213,10 @@ def query_my_notes(query: str, top_k: int = 5) -> dict:
         return {"query": query, "error": "query cannot be empty", "results": []}
 
     top_k = max(1, min(top_k, 10))
-    index_path = _resolve_notes_path(NOTES_INDEX_PATH)
-    metadata_path = _resolve_notes_path(NOTES_METADATA_PATH)
+    active_config = _get_active_notes_config()
+    index_path = _resolve_notes_path(Path(active_config["index_path"]))
+    metadata_path = _resolve_notes_path(Path(active_config["metadata_path"]))
+    embedding_model = active_config.get("embedding_model", NOTES_EMBEDDING_MODEL)
 
     if not index_path.exists():
         return {
@@ -217,7 +237,7 @@ def query_my_notes(query: str, top_k: int = 5) -> dict:
 
     client = get_openai_client()
     response = client.embeddings.create(
-        model=NOTES_EMBEDDING_MODEL,
+        model=embedding_model,
         input=query,
     )
     query_vector = np.array([response.data[0].embedding], dtype="float32")
@@ -242,6 +262,7 @@ def query_my_notes(query: str, top_k: int = 5) -> dict:
     return {
         "query": query,
         "top_k": top_k,
+        "notes_name": active_config.get("notes_name"),
         "index_path": str(index_path),
         "results": results,
     }

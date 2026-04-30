@@ -4,5 +4,4 @@ __pycache__/
 *.pyc
 .DS_Store
 openapi.json
-my_notes_metadata.json
-my_notes.index
+index/

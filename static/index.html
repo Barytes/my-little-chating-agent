@@ -111,6 +111,49 @@
             font-size: 0.9rem;
         }
 
+        .header-spacer {
+            flex: 1;
+        }
+
+        .notes-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .notes-status {
+            max-width: 220px;
+            color: #b9c0d4;
+            font-size: 0.85rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .notes-btn {
+            padding: 8px 12px;
+            background: #0f3460;
+            color: #eee;
+            border: 1px solid #2c5f94;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: border-color 0.2s, background 0.2s;
+            white-space: nowrap;
+        }
+
+        .notes-btn:hover {
+            background: #164674;
+            border-color: #e94560;
+        }
+
+        .notes-btn:disabled {
+            background: #33394d;
+            border-color: #555b70;
+            cursor: not-allowed;
+        }
+
         /* Messages Area */
         .messages-area {
             flex: 1;
@@ -270,6 +313,12 @@
                 <option value="gemini-2.5-pro">gemini-2.5-pro</option>
                 <option value="kimi-k2.5">kimi-k2.5</option>
             </select>
+            <div class="header-spacer"></div>
+            <div class="notes-controls">
+                <span class="notes-status" id="notesStatus">Notes: none</span>
+                <button class="notes-btn" id="notesBtn" onclick="selectNotesDirectory()">Choose Notes</button>
+                <input type="file" id="notesDirectoryInput" webkitdirectory directory multiple hidden>
+            </div>
         </div>
 
         <div class="messages-area" id="messagesArea">
@@ -425,6 +474,98 @@
             return content;
         }
 
+        function setNotesStatus(message) {
+            document.getElementById('notesStatus').textContent = message;
+        }
+
+        function getSelectedDirectoryName(files) {
+            if (!files.length) return 'notes';
+            const relativePath = files[0].webkitRelativePath || files[0].name;
+            return relativePath.split('/')[0] || 'notes';
+        }
+
+        async function loadNotesStatus() {
+            try {
+                const response = await fetch(`${BASE_URL}/notes/status`);
+                const data = await response.json();
+                if (data.active && data.active.notes_name) {
+                    setNotesStatus(`Notes: ${data.active.notes_name}`);
+                }
+            } catch (error) {
+                setNotesStatus('Notes: unavailable');
+            }
+        }
+
+        function selectNotesDirectory() {
+            document.getElementById('notesDirectoryInput').click();
+        }
+
+        async function trySelectExistingNotes(notesName) {
+            const formData = new FormData();
+            formData.append('notes_name', notesName);
+
+            const response = await fetch(`${BASE_URL}/notes/select`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.status === 404) return null;
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to load notes index');
+            }
+            return data;
+        }
+
+        async function uploadAndIndexNotes(notesName, files) {
+            const markdownFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.md'));
+            if (markdownFiles.length === 0) {
+                throw new Error('No Markdown files found in the selected directory');
+            }
+
+            const formData = new FormData();
+            formData.append('notes_name', notesName);
+            markdownFiles.forEach(file => {
+                formData.append('files', file, file.webkitRelativePath || file.name);
+            });
+
+            const response = await fetch(`${BASE_URL}/notes/index`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.detail || 'Failed to index notes');
+            }
+            return data;
+        }
+
+        async function handleNotesDirectorySelected(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            const notesName = getSelectedDirectoryName(files);
+            const notesBtn = document.getElementById('notesBtn');
+            notesBtn.disabled = true;
+            setNotesStatus(`Notes: checking ${notesName}`);
+
+            try {
+                let data = await trySelectExistingNotes(notesName);
+                if (!data) {
+                    setNotesStatus(`Notes: indexing ${notesName}`);
+                    data = await uploadAndIndexNotes(notesName, files);
+                }
+
+                const activeName = data.active?.notes_name || data.notes_name || notesName;
+                setNotesStatus(`Notes: ${activeName}`);
+            } catch (error) {
+                setNotesStatus(`Notes: ${error.message}`);
+            } finally {
+                notesBtn.disabled = false;
+                event.target.value = '';
+            }
+        }
+
         // Send message
         async function sendMessage() {
             const input = document.getElementById('messageInput');
@@ -493,6 +634,8 @@
             }
         });
 
+        document.getElementById('notesDirectoryInput').addEventListener('change', handleNotesDirectorySelected);
+
         // Load models from API
         async function loadModels() {
             try {
@@ -516,6 +659,7 @@
         // Initialize
         loadChats();
         loadModels();
+        loadNotesStatus();
         document.getElementById('messageInput').focus();
     </script>
 </body>

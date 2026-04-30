@@ -153,6 +153,53 @@ def save_metadata(chunks: list[ChunkMetadata], metadata_path: Path) -> None:
     )
 
 
+def build_notes_index(
+    root: Path,
+    index_path: Path,
+    metadata_path: Path,
+    model: str = DEFAULT_MODEL,
+    base_url: str = DEFAULT_BASE_URL,
+    chunk_size: int = 1200,
+    overlap: int = 200,
+    batch_size: int = 64,
+) -> dict:
+    """Build and save a FAISS index for Markdown files under root."""
+    root = root.expanduser().resolve()
+    index_path = index_path.expanduser().resolve()
+    metadata_path = metadata_path.expanduser().resolve()
+
+    if not root.exists() or not root.is_dir():
+        raise ValueError(f"Folder does not exist or is not a directory: {root}")
+
+    markdown_files = find_markdown_files(root)
+    if not markdown_files:
+        raise ValueError(f"No .md files found under: {root}")
+
+    chunks = load_chunks(markdown_files, root, chunk_size, overlap)
+    if not chunks:
+        raise ValueError(f"Markdown files were found, but no text chunks were created under: {root}")
+
+    print(f"Found {len(markdown_files)} Markdown files")
+    print(f"Created {len(chunks)} chunks")
+
+    client = get_openai_client(base_url)
+    embeddings = embed_chunks(client, chunks, model, batch_size)
+    index = build_faiss_index(embeddings)
+
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    faiss.write_index(index, str(index_path))
+    save_metadata(chunks, metadata_path)
+
+    return {
+        "markdown_files": len(markdown_files),
+        "chunks": len(chunks),
+        "index_path": str(index_path),
+        "metadata_path": str(metadata_path),
+        "model": model,
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Recursively index Markdown notes into a local FAISS vector index."
@@ -176,31 +223,19 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     load_dotenv()
     args = parse_args()
-    root = args.folder.expanduser().resolve()
+    result = build_notes_index(
+        root=args.folder,
+        index_path=args.output,
+        metadata_path=args.metadata_output,
+        model=args.model,
+        base_url=args.base_url,
+        chunk_size=args.chunk_size,
+        overlap=args.overlap,
+        batch_size=args.batch_size,
+    )
 
-    if not root.exists() or not root.is_dir():
-        raise SystemExit(f"Folder does not exist or is not a directory: {root}")
-
-    markdown_files = find_markdown_files(root)
-    if not markdown_files:
-        raise SystemExit(f"No .md files found under: {root}")
-
-    chunks = load_chunks(markdown_files, root, args.chunk_size, args.overlap)
-    if not chunks:
-        raise SystemExit(f"Markdown files were found, but no text chunks were created under: {root}")
-
-    print(f"Found {len(markdown_files)} Markdown files")
-    print(f"Created {len(chunks)} chunks")
-
-    client = get_openai_client(args.base_url)
-    embeddings = embed_chunks(client, chunks, args.model, args.batch_size)
-    index = build_faiss_index(embeddings)
-
-    faiss.write_index(index, str(args.output))
-    save_metadata(chunks, args.metadata_output)
-
-    print(f"Saved FAISS index to {args.output}")
-    print(f"Saved chunk metadata to {args.metadata_output}")
+    print(f"Saved FAISS index to {result['index_path']}")
+    print(f"Saved chunk metadata to {result['metadata_path']}")
 
 
 if __name__ == "__main__":
