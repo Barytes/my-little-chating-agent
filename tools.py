@@ -1,11 +1,21 @@
 """Tools for LLM function calling."""
 
+import json
+import os
 import re
+from pathlib import Path
 
+import faiss
 import httpx
+import numpy as np
 from bs4 import BeautifulSoup
 
-from client import get_http_client
+from client import get_http_client, get_openai_client
+
+
+NOTES_INDEX_PATH = Path(os.getenv("MY_NOTES_INDEX_PATH", "my_notes.index"))
+NOTES_METADATA_PATH = Path(os.getenv("MY_NOTES_METADATA_PATH", "my_notes_metadata.json"))
+NOTES_EMBEDDING_MODEL = os.getenv("MY_NOTES_EMBEDDING_MODEL", "text-embedding-3-small")
 
 # Function schema for LLM tool calling
 WEB_SEARCH_SCHEMA = {
@@ -46,6 +56,29 @@ READ_PAGE_SCHEMA = {
                 },
             },
             "required": ["url"],
+        },
+    },
+}
+
+QUERY_MY_NOTES_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "query_my_notes",
+        "description": "Search the user's local Markdown notes using the FAISS vector index built from my_notes.index. Use this as a research assistant for the user's personal knowledge base.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "A focused semantic search query for the user's personal notes.",
+                },
+                "top_k": {
+                    "type": "integer",
+                    "description": "Maximum number of matching note chunks to return (default: 5, max: 10).",
+                    "default": 5,
+                },
+            },
+            "required": ["query"],
         },
     },
 }
@@ -139,10 +172,86 @@ def read_page(url: str) -> dict:
         return {"url": url, "error": str(e)}
 
 
+def _resolve_notes_path(path: Path) -> Path:
+    """Resolve note index paths relative to this project if needed."""
+    if path.is_absolute():
+        return path
+    return Path(__file__).resolve().parent / path
+
+
+def query_my_notes(query: str, top_k: int = 5) -> dict:
+    """
+    Search the local Markdown notes FAISS index.
+
+    Args:
+        query: Semantic search query
+        top_k: Number of matching chunks to return
+
+    Returns:
+        Matching note chunks with source metadata and similarity scores
+    """
+    query = query.strip()
+    if not query:
+        return {"query": query, "error": "query cannot be empty", "results": []}
+
+    top_k = max(1, min(top_k, 10))
+    index_path = _resolve_notes_path(NOTES_INDEX_PATH)
+    metadata_path = _resolve_notes_path(NOTES_METADATA_PATH)
+
+    if not index_path.exists():
+        return {
+            "query": query,
+            "error": f"Notes index not found at {index_path}. Run indexer.py first.",
+            "results": [],
+        }
+
+    if not metadata_path.exists():
+        return {
+            "query": query,
+            "error": f"Notes metadata not found at {metadata_path}. Run indexer.py first.",
+            "results": [],
+        }
+
+    index = faiss.read_index(str(index_path))
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+
+    client = get_openai_client()
+    response = client.embeddings.create(
+        model=NOTES_EMBEDDING_MODEL,
+        input=query,
+    )
+    query_vector = np.array([response.data[0].embedding], dtype="float32")
+    faiss.normalize_L2(query_vector)
+
+    distances, indices = index.search(query_vector, min(top_k, index.ntotal))
+    results = []
+    for score, chunk_id in zip(distances[0], indices[0]):
+        if chunk_id < 0:
+            continue
+
+        item = metadata[chunk_id] if chunk_id < len(metadata) else {}
+        results.append({
+            "score": float(score),
+            "source": item.get("source"),
+            "chunk_index": item.get("chunk_index"),
+            "start_char": item.get("start_char"),
+            "end_char": item.get("end_char"),
+            "text": item.get("text"),
+        })
+
+    return {
+        "query": query,
+        "top_k": top_k,
+        "index_path": str(index_path),
+        "results": results,
+    }
+
+
 # Export all available tools and their schemas
-AVAILABLE_TOOLS = [WEB_SEARCH_SCHEMA, READ_PAGE_SCHEMA]
+AVAILABLE_TOOLS = [WEB_SEARCH_SCHEMA, READ_PAGE_SCHEMA, QUERY_MY_NOTES_SCHEMA]
 
 TOOL_FUNCTIONS = {
     "web_search": web_search,
     "read_page": read_page,
+    "query_my_notes": query_my_notes,
 }
