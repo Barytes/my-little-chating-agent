@@ -11,14 +11,6 @@ BASE_URL = "https://space.ai-builders.com/backend/v1"
 API_KEY_ENV_NAMES = ("SUPER_MIND_API_KEY", "BUILDER_API_KEY", "AI_BUILDER_TOKEN")
 
 DEFAULT_MODEL = "grok-4-fast"
-MODEL_ALIASES = {
-    "grok4fast": "grok-4-fast",
-    "grok-4fast": "grok-4-fast",
-}
-RADAR_MODEL = MODEL_ALIASES.get(
-    os.getenv("RADAR_MODEL", DEFAULT_MODEL).strip(),
-    os.getenv("RADAR_MODEL", DEFAULT_MODEL).strip(),
-)
 
 
 def get_api_key() -> str:
