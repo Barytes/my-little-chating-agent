@@ -1,38 +1,72 @@
-import os
-
 import httpx
-from dotenv import load_dotenv
 from openai import OpenAI
 
-load_dotenv()
-
-# AI Builders Space API configuration
-BASE_URL = "https://space.ai-builders.com/backend/v1"
-API_KEY_ENV_NAMES = ("SUPER_MIND_API_KEY", "BUILDER_API_KEY", "AI_BUILDER_TOKEN")
-
-DEFAULT_MODEL = "grok-4-fast"
-
-
-def get_api_key() -> str:
-    """Get API key from environment."""
-    for env_name in API_KEY_ENV_NAMES:
-        api_key = os.getenv(env_name)
-        if api_key:
-            return api_key
-
-    names = ", ".join(API_KEY_ENV_NAMES)
-    raise ValueError(f"API key not configured. Set one of: {names}")
+from providers import (
+    ProviderConfig,
+    get_current_search_provider,
+    get_provider,
+    resolve_api_key,
+    validate_provider,
+)
 
 
-def get_openai_client() -> OpenAI:
-    """Get OpenAI client configured for AI Builders Space."""
-    return OpenAI(base_url=BASE_URL, api_key=get_api_key())
+def get_llm_client(provider: str | ProviderConfig | None = None) -> OpenAI:
+    """OpenAI-compatible chat client for the given LLM provider."""
+    cfg = get_provider(provider)
+    validate_provider(cfg)
+
+    kwargs: dict = {"api_key": resolve_api_key(cfg), "base_url": cfg.resolve_base_url()}
+    return OpenAI(**kwargs)
+
+
+_SKIP_MODEL_PREFIXES = (
+    "text-embedding",
+    "whisper",
+    "tts-",
+    "dall-e",
+    "omni-moderation",
+    "babbage",
+    "davinci",
+)
+
+
+def _is_chat_model(model_id: str) -> bool:
+    lowered = model_id.lower()
+    return not any(lowered.startswith(prefix) for prefix in _SKIP_MODEL_PREFIXES)
+
+
+def _catalog_models(cfg: ProviderConfig) -> list[str]:
+    models = list(cfg.known_models)
+    default = cfg.resolve_default_model()
+    if default and default not in models:
+        models.insert(0, default)
+    return models
+
+
+def list_available_models(
+    provider: str | ProviderConfig | None = None,
+    client: OpenAI | None = None,
+) -> tuple[list[str], str]:
+    """Return (models, source). Prefer live /models, fall back to catalog."""
+    cfg = get_provider(provider)
+    try:
+        llm = client or get_llm_client(cfg)
+        remote = [item.id for item in llm.models.list().data if _is_chat_model(item.id)]
+        if remote:
+            default = cfg.resolve_default_model()
+            remote = sorted(set(remote), key=lambda name: (name != default, name))
+            return remote, "api"
+    except Exception:
+        pass
+    return _catalog_models(cfg), "catalog"
 
 
 def get_http_client() -> httpx.Client:
-    """Get HTTP client with authorization header for AI Builders Space."""
+    """Search/tool backend. Uses the current search provider."""
+    cfg = get_current_search_provider()
+    validate_provider(cfg)
     return httpx.Client(
-        base_url=BASE_URL,
-        headers={"Authorization": f"Bearer {get_api_key()}"},
+        base_url=cfg.resolve_base_url(),
+        headers={"Authorization": f"Bearer {resolve_api_key(cfg)}"},
         timeout=30.0,
     )

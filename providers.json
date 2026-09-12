@@ -1,0 +1,38 @@
+{
+  "default_model_provider": "ai-builders",
+  "default_search_provider": "ai-builders",
+  "model_providers": {
+    "ai-builders": {
+      "base_url": "https://space.ai-builders.com/backend/v1",
+      "api_key_envs": ["BUILDER_API_KEY"],
+      "default_model": "grok-4-fast",
+      "known_models": [
+        "grok-4-fast",
+        "deepseek",
+        "deepseek-v4-flash",
+        "deepseek-v4-pro",
+        "gemini-2.5-flash-image",
+        "gemini-2.5-pro",
+        "gemini-3-flash-preview",
+        "gpt-5",
+        "gpt-image-1.5",
+        "grok-4.5",
+        "kimi-k2.5",
+        "supermind-agent-v1"
+      ]
+    },
+    "deepseek": {
+      "base_url": "https://api.deepseek.com",
+      "api_key_envs": ["DEEPSEEK_API_KEY"],
+      "default_model": "deepseek-chat",
+      "known_models": ["deepseek-chat", "deepseek-reasoner"]
+    }
+  },
+  "search_providers": {
+    "ai-builders": {
+      "base_url": "https://space.ai-builders.com/backend/v1",
+      "search_path": "/search/",
+      "api_key_envs": ["BUILDER_API_KEY", "AI_BUILDER_TOKEN", "SUPER_MIND_API_KEY"]
+    }
+  }
+}

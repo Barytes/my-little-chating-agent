@@ -6,6 +6,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from client import get_http_client
+from providers import get_current_search_provider
 
 # Function schema for LLM tool calling
 WEB_SEARCH_SCHEMA = {
@@ -62,9 +63,10 @@ def web_search(keywords: list[str], max_results: int = 5) -> dict:
     Returns:
         Search results with queries, combined_answer, and errors
     """
+    search = get_current_search_provider()
     with get_http_client() as client:
         response = client.post(
-            "/search/",
+            search.search_path,
             json={
                 "keywords": keywords,
                 "max_results": max_results,
