@@ -1,7 +1,7 @@
 import httpx
 from openai import OpenAI
 
-from providers import (
+from .providers import (
     ProviderConfig,
     get_current_search_provider,
     get_provider,

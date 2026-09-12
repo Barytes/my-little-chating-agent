@@ -3,3 +3,9 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# Runtime artifacts (keep directory placeholders)
+runs/tasks/*
+!runs/tasks/.gitkeep
+runs/trajectories/*
+!runs/trajectories/.gitkeep

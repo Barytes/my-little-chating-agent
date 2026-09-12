@@ -5,8 +5,8 @@ import re
 import httpx
 from bs4 import BeautifulSoup
 
-from client import get_http_client
-from providers import get_current_search_provider
+from .client import get_http_client
+from .providers import get_current_search_provider
 
 # Function schema for LLM tool calling
 WEB_SEARCH_SCHEMA = {

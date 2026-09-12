@@ -14,6 +14,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from .paths import ENV_FILE, PROJECT_ROOT, PROVIDERS_CONFIG
+
 GLOBAL_ENV = Path.home() / ".config" / "ai-builders" / ".env"
 
 
@@ -32,10 +34,9 @@ def _ancestor_env_files(start: Path) -> list[Path]:
 
 def _load_env() -> None:
     load_dotenv(GLOBAL_ENV)
-    here = Path(__file__).resolve().parent
-    for env_file in _ancestor_env_files(here):
+    for env_file in _ancestor_env_files(PROJECT_ROOT):
         load_dotenv(env_file, override=True)
-    load_dotenv(here / ".env", override=True)
+    load_dotenv(ENV_FILE, override=True)
 
 
 _load_env()
@@ -89,7 +90,7 @@ def get_config_path() -> Path:
     override = os.getenv(CONFIG_ENV)
     if override:
         return Path(override).expanduser().resolve()
-    return Path(__file__).resolve().parent / "providers.json"
+    return PROVIDERS_CONFIG
 
 
 def set_config_path(path: str | Path) -> None:

@@ -2,17 +2,15 @@
 
 import json
 
-from client import get_llm_client, list_available_models
-from providers import (
+from .client import get_llm_client, list_available_models
+from .providers import (
     ProviderConfig,
     SearchProviderConfig,
     config_mtime,
     get_provider,
     set_current_search_provider,
 )
-from tools import AVAILABLE_TOOLS, TOOL_FUNCTIONS
-
-MAX_TURNS = 5
+from .tools import AVAILABLE_TOOLS, TOOL_FUNCTIONS
 
 
 class Agent:
@@ -21,9 +19,7 @@ class Agent:
         provider: str | None = None,
         model: str | None = None,
         search_provider: str | None = None,
-        max_turns: int = MAX_TURNS,
     ):
-        self.max_turns = max_turns
         self.messages: list[dict] = []
         self.provider: ProviderConfig
         self.search_provider: SearchProviderConfig
@@ -79,8 +75,10 @@ class Agent:
         )
         print(f"[Agent] User message: {user_message}")
 
-        for turn in range(self.max_turns):
-            print(f"[Agent] Turn {turn + 1}/{self.max_turns}")
+        turn = 0
+        while True:
+            turn += 1
+            print(f"[Agent] Turn {turn}")
 
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -99,10 +97,6 @@ class Agent:
             self.messages.append({"role": "assistant", "content": content})
             print(f"[Agent] Final Answer: '{content[:200]}...'")
             return content
-
-        raise RuntimeError(
-            f"Agent loop exceeded max turns ({self.max_turns}) without a final answer"
-        )
 
     def _handle_tool_calls(self, message) -> None:
         self.messages.append(
